@@ -1,0 +1,79 @@
+---
+title: "64060_Assignment_1"
+author: "Bryan Mack"
+date: "2025-06-01"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1.  Download a dataset from the web. You may use any source, but specify the source in your code. Also ensure that the data has a mix of quantitative and qualitative (categorical) variables.
+2.  Import the dataset into R (when working in console or RStudio)
+    1.  Later imported into RMD Environment (changes "Data" to "Cereals")
+
+```{r}
+Cereals <- read.csv("D:/R_DATA/Cereals.csv")
+View(Cereals)
+```
+
+3.  Print out descriptive statistics for a selection of quantitative and categorical variables.
+
+    ```{r}
+    summary(Cereals$protein)
+    ```
+
+    ```{r}
+    table(Cereals$mfr)
+    ```
+
+    ```{r}
+
+    ```
+
+4.  Transform at least one variable. It doesn't matter what the transformation is.
+
+    ```{r echo=TRUE}
+    Cereals$dubl_calories <- Cereals$calories * 2
+    Cereals$dubl_protein <- Cereals$protein * 2
+    Cereals$dubl_fat <- Cereals$fat * 2
+    Cereals$dubl_sodium <- Cereals$sodium * 2
+    Cereals$dubl_fiber <- Cereals$fiber * 2
+    Cereals$dubl_carbo <- Cereals$carbo * 2
+    Cereals$dubl_sugars <- Cereals$sugars * 2
+    Cereals$dubl_potass <- Cereals$potass * 2
+    Cereals$dubl_vitamins <- Cereals$vitamins * 2
+    Cereals$dubl_cups <- Cereals$cups * 2
+    ```
+
+<!-- -->
+
+5.  Plot at least one quantitative variable, and one scatterplot
+
+```{r}
+plot(Cereals$protein,Cereals$calories)
+```
+
+```{r}
+#load ggplot2 library
+library(ggplot2)
+ggplot(Cereals, aes(x = calories, y = protein)) +
+  geom_point(size = 3, color = "blue") +
+  geom_point(aes(x = dubl_calories, y = dubl_protein), size = 3, color = "red", shape = 17) +
+  labs(title = "Scatterplot of Calories vs Protein and Their Doubled Values",
+       x = "Calories (Blue) / Double Calories (Red)",
+       y = "Protein (Blue) / Double Protein (Red)") +
+  theme_minimal()
+```
+
+6.  Upload your R program, and any associated data files to your git account. Remember to create a separate repository for this class.
+
+    <https://github.com/bryan-mack/64060_bmack>
+
+    <https://github.com/bryan-mack/64060_bmack/blob/main/Assignment_1/Cereals.csv>
+
+7.  Paste the address to your repository in the assignment submission box here in Canvas.
+
+<https://github.com/bryan-mack/64060_bmack/tree/d18b038a2ee0c9309b004d8dd5b0645e550eaefe/Assignment_1>
