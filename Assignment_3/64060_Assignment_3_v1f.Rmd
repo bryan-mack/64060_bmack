@@ -1,0 +1,289 @@
+---
+title: "Assignment_3v1a"
+author: "Bryan Mack"
+date: "2025-06-10"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+dir.create("images")
+```
+The purpose of this assignment is to use Naive Bayes for classification.
+
+The file UniversalBank.csv contains data on 5000 customers of Universal Bank. The data include
+customer demographic information (age, income, etc.), the customer’s relationship with the bank
+(mortgage, securities account, etc.), and the customer response to the last personal loan campaign
+(Personal Loan). Among these 5000 customers, only 480 (= 9.6%) accepted the personal loan that
+was offered to them in the earlier campaign. In this exercise, we focus on two predictors: Online
+(whether or not the customer is an active user of online banking services) and Credit Card
+(abbreviated CC below) (does the customer hold a credit card issued by the bank), and the outcome
+Personal Loan (abbreviated Loan below).
+
+Partition the data into training (60%) and validation (40%) sets.
+
+Step 1 install packages
+
+```{r Install Packages}
+#install.packages("dplyr")
+#install.packages("ISLR")
+#install.packages("e1071")
+#install.packages("tidyr")
+#install.packages("class")
+#install.packages("ggplot2")
+```
+
+Step 2 Load libraries 
+
+```{r Load Libraries}
+library(caret)
+library(ISLR)
+library(e1071)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(gmodels)
+library(pROC)
+#learn to use require() to look for a required library 
+```
+
+Step 3 Working Directory
+
+```{r Working Directory}
+setwd("D:/R_DATA")
+getwd()
+#setwd() #used to set R working directory 
+# i.e. D:/R_DATA or (note / for windows OS) 
+# setwd("D:\\\\R_DATA\\\\")
+#setwd("D:/R_DATA")
+```
+
+Step 4 Load Working Data
+UniversalBank.csv
+
+```{r Load Origonal Data}
+#data.df <- read.csv("UniversalBank.csv")
+#data <- read.csv("UniversalBank.csv")
+#Remove a variable Example
+#MyData<-data[,-2] Example
+#MyData <- data[,-1] #Remove column 1 ID
+data <- read.csv("UniversalBank.csv", stringsAsFactors = FALSE)
+data$CreditCard <- as.factor(data$CreditCard)
+data$Personal.Loan <- as.factor(data$Personal.Loan)
+data$Online <- as.factor(data$Online)
+#MyData <- data[,-1] #Remove column 1 ID
+```
+
+Step 5 Read Original Data
+
+```{r Read Origonal Data}
+#head(data)
+#summary(data)
+#Find the number of missing values in the data set
+#sum(is.na(data$Online)) 
+#sum(is.na(data$CreditCard))
+#sum(is.na(data$Personal.Loan))
+
+```
+
+Step 5 Partition the data into training (60%) and validation (40%) sets.
+
+```{r Partition Data}
+set.seed(123)
+#Divide data into test and train
+Index_Train <- createDataPartition(data$Personal.Loan, p=0.6, list=FALSE)
+Train <-data[Index_Train,]
+Test  <-data[-Index_Train,]
+```
+
+A. Create a pivot table for the training data with Online as a column variable, CC as a row
+variable, and Loan as a secondary row variable. The values inside the table should convey
+the count. In R use functions melt() and cast(), or function table(). In Python, use panda
+dataframe methods melt() and pivot(). 
+
+```{r Pivot Table melt & cast}
+#DATA MINING FOR BUSINESS ANALYTICS Page 98 pivot tables using functions melt() and cast()
+#install(reshape)
+#library(reshape2)
+#create bins of size 1
+
+
+```
+
+```{r Pivot Using table()}
+pivot_table <- table(data$CreditCard, data$Personal.Loan, data$Online)
+#pivot_table_train <- table(Train$CreditCard, Train$Personal.Loan, Train$Online)
+print(pivot_table)
+```
+
+```{r Pivot table 2}
+pivot_table_2 <- table(CreditCard = data$CreditCard, 
+                     Personal.Loan = data$Personal.Loan, 
+                     Online = data$Online)
+print(pivot_table_2)
+```
+Training Data Pivot Table
+```{r Pivot Table 3}
+pivot_table_3 <- table(CreditCard = Train$CreditCard, 
+                     Personal.Loan = Train$Personal.Loan, 
+                     Online = Train$Online)
+print(pivot_table_3)
+```
+
+B. Consider the task of classifying a customer who owns a bank credit card and is actively using
+online banking services. Looking at the pivot table, what is the probability that this customer
+will accept the loan offer? [This is the probability of loan acceptance (Loan = 1) conditional on
+having a bank credit card (CC = 1) and being an active user of online banking services (Online
+= 1)].
+
+
+Probability that Personal.Loan = 1 CreditCard = 1 Online = 1 
+
+Credit Card = 1, Online = 1, Loan = 1 = 48 (from table)
+
+Total number of customers Credit Card = 1, Personal Loan = 1 = 477 (from table)
+
+Total Customers with CC = 48 + 477 = 525
+
+48/525 = 0.0914285714285714 = 9.14% 
+
+
+
+C. Create two separate pivot tables for the training data. One will have Loan (rows) as a
+function of Online (columns) and the other will have Loan (rows) as a function of CC.
+
+function of Online (columns):
+
+```{r Online Pivot Table}
+pivot_loan_online <- table(Personal.Loan = Train$Personal.Loan, 
+                          Online = Train$Online)
+print(pivot_loan_online)
+```
+
+function of CreditCard (columns):
+```{r Credit Card Pivot Table}
+pivot_loan_cc <- table(Personal.Loan = Train$Personal.Loan, 
+                       CreditCard = Train$CreditCard)
+print(pivot_loan_cc)
+
+```
+D. Compute the following quantities [P(A | B) means “the probability of A given B”]: 
+i. P(CC = 1 | Loan = 1) (the proportion of credit card holders among the loan acceptors)
+  (CC =1 | Loan = 1) = 86 /(196 +  86)
+  86/282 = 0.3049645390070922
+  30.496% of Loan Acceptors have a Credit Card
+ii. P(Online = 1 | Loan = 1) 
+  (Online = 1 | Loan = 1) 174 / (108 + 174)
+  174/282 = 0.6170212765957447
+  61.7021% Of Loan Acceptors have an Online Account
+iii. P(Loan = 1) (the proportion of loan acceptors)
+  # 1  108 + 174 = 282 Online
+  # 0 1091 1627 = 2,718 Online
+  # 1  196 +  86 = 282 CreditCard
+  # 0 1951  767 = 2,718 Credit Card
+  # 3000 Total Records
+  282 / 3000 = 0.094
+  9.4% Have a Personal Loan
+iv. P(CC = 1 | Loan = 0)
+  P(CC = 1 | Loan = 0) = 767 / (1951 + 767)
+  767 / (2,718) = 0.2821927888153054
+  28.2192% of non-Loan Acceptors have a Credit Card
+v. P(Online = 1 | Loan = 0)
+  P(Online = 1 | Loan = 0) = 1627 / (1091 + 1627)
+  1627/2718 = 0.5986019131714496
+  59.8601% of non-Loan Acceptors have an Online Account
+vi. P(Loan = 0)
+  # 1  108 + 174 = 282 Online
+  # 0 1091 1627 = 2,718 Online
+  # 1  196 +  86 = 282 CreditCard
+  # 0 1951  767 = 2,718 Credit Card
+  # 3000 Total Records
+  2,718 / 3000 = 0.906
+  90.6% of Customers do not have a Personal Loan
+  
+```{r Summary Data}
+#summary(data)
+```
+  
+E Use the quantities computed above to compute the naive Bayes probability P(Loan = 1 | CC = 1, Online = 1).
+
+naive Bayes probability: P(Loan = 1 | CC = 1, Online = 1) = 0.2916667 * 0.6111111 = 0.17824075787037
+17.82% Probability of a loan acceptor has both an online account and credit card
+
+```{r naïve Bayes classifier}
+# Build a naïve Bayes classifier
+nb_model <- naiveBayes(Personal.Loan~CreditCard+Online,data = Train)
+nb_model
+```
+
+
+```{r}
+# Predict the default status of test dataset 
+Predicted_Test_labels <-predict(nb_model,Test)
+
+#library("gmodels")
+
+# Show the confusion matrix of the classifier
+CrossTable(x=Test$Personal.Loan,y=Predicted_Test_labels, prop.chisq = FALSE) 
+```
+F. Compare this value with the one obtained from the pivot table in (B). Which is a more accurate estimate?
+
+naive Bayes probability value: 17.82%
+Pivot Table Question B probability value: 9.14% 
+
+The Naive Bayes looks more accurate because it is a higher probability of Personal Loan acceptance when looking at customers with both an active Credit Card and Online Account. The directions stated that 9.6% of the total population accepted the last Personal Loan offer but we see a higher probability with acceptance if the customer has a Credit Card and Online Account. 
+
+naive Bayes probability: P(Loan = 1 | CC = 1, Online = 1) = 0.2916667 * 0.6111111 = 0.17824075787037
+17.82% Probability of a loan acceptor has both an online account and credit card
+
+Probability that Personal.Loan = 1 CreditCard = 1 Online = 1 
+Credit Card = 1, Online = 1, Loan = 1 = 48 (from table)
+Total number of customers Credit Card = 1, Personal Loan = 1 = 477 (from table)
+Total Customers with CC = 48 + 477 = 525
+48/525 = 0.0914285714285714 = 9.14% 
+
+G. Which of the entries in this table are needed for computing P(Loan = 1 | CC = 1, Online = 1)? Run naive Bayes on the data. Examine the model output on training data, and find the entry that corresponds to P(Loan = 1 | CC = 1, Online = 1). Compare this to the number you obtained in (E).
+
+The entries needed in the table are the 
+
+```{r}
+#nb_model <- naiveBayes(default~balance+income,data = Train)
+
+
+#Make predictions and return probability of each class
+Predicted_Test_labels <-predict(nb_model,Test, type = "raw")
+
+#show the first few values 
+head(Predicted_Test_labels)
+```
+
+```{r}
+#install.packages("pROC") # install if necessary
+#library(pROC)
+
+#Passing the second column of the predicted probabilities 
+#That column contains the probability associate to ‘yes’
+roc(Test$Personal.Loan, Predicted_Test_labels[,2])
+plot.roc(Test$Personal.Loan,Predicted_Test_labels[,2])
+```
+
+```{r}
+#Create a Box-Cox Transformation Model
+library(ISLR)
+library(caret)
+Box_Cox_Transform<-preProcess(data,method = "BoxCox")
+Box_Cox_Transform
+```
+
+
+```{r}
+# PersonalLoan_Transformed=predict(Box_Cox_Transform,data)
+# y <- PersonalLoan_Transformed$Personal.Loan
+# h<-hist(y, breaks=10, col="red", xlab="Personal Loan",
+#   main="Histogram before Transformation")
+# xfit<-seq(min(y),max(y),length=40)
+# yfit<-dnorm(xfit,mean=mean(y),sd=sd(y))
+# yfit <- yfit*diff(h$mids[1:2])*length(y)
+# lines(xfit, yfit, col="blue", lwd=2) 
+```
+
